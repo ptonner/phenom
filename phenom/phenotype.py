@@ -1,4 +1,5 @@
 import numpy as np
+import pystan
 
 class Phenotype(object):
 
@@ -23,6 +24,14 @@ class Phenotype(object):
         self.minExpectedCross = minExpectedCross
 
         self.posteriors = []
+        self._model = None
+        self._modelFile = model
+
+    @property
+    def model(self):
+        if self._model is None:
+            self._model = pystan.StanModel(file='phenom/stan/'+self._modelFile)
+        return self._model
 
     def config(self):
 
@@ -70,3 +79,9 @@ class Phenotype(object):
         y = (y - y.mean()) / y.std()
 
         return x, y, xnorm, ynorm
+
+    def samples(self, *args, **kwargs):
+        cfg = self.config()
+        samp = self.model.sampling(data=cfg, *args, **kwargs)
+        self.posteriors.append(samp)
+        return samp
