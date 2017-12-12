@@ -19,6 +19,10 @@ class Design(object):
         return self.meta.shape[0]
 
     @property
+    def L(self):
+        return max(self.priors) + 1
+
+    @property
     def names(self):
         return self._names()
 
