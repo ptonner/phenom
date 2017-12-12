@@ -12,10 +12,7 @@ class Design(object):
 
     @property
     def k(self):
-        return self._k()
-
-    def _k(self):
-        raise NotImplemented()
+        return self.matrix.shape[1]
 
     @property
     def n(self):
@@ -39,6 +36,13 @@ class Design(object):
     def frame(self):
         return pd.DataFrame(self.matrix, columns = self.names)
 
+    @property
+    def priors(self):
+        return np.array(self._priors()).astype(int)
+
+    def _priors(self):
+        raise NotImplemented()
+
     def __mul__(self, other):
         return Kron(self, other)
 
@@ -47,7 +51,9 @@ class Design(object):
 
 class Add(Design):
 
-    def __init__(self, d1, d2):
+    def __init__(self, d1, d2, name='add', *args, **kwargs):
+        super(Add, self).__init__(d1.meta, name, *args, **kwargs)
+
         self.d1 = d1
         self.d2 = d2
 
@@ -63,10 +69,18 @@ class Add(Design):
     def _matrix(self):
         return np.concatenate((self.d1.matrix, self.d2.matrix), 1)
 
+    def _priors(self):
+
+        p1 = self.d1.priors
+        p2 = self.d2.priors
+
+        return p1.tolist() + (p2+max(p1)+1).tolist()
+
 
 class Kron(Design):
 
-    def __init__(self, d1, d2):
+    def __init__(self, d1, d2, name='kron', *args, **kwargs):
+        super(Kron, self).__init__(d1.meta, name, *args, **kwargs)
         self.d1 = d1
         self.d2 = d2
 
@@ -80,14 +94,26 @@ class Kron(Design):
 
         return np.array(ret)
 
+    def _priors(self):
+
+        p1 = self.d1.priors
+        p2 = self.d2.priors
+
+        priors = []
+
+        for v1, v2 in product(p1, p2):
+            priors.append(v1 + v2*(max(p1)+1))
+
+        return priors
+
     def _names(self):
 
-        return ['(%s: %s)x(%s: %s)'%(self.d1.name, v2, self.d2.name, v2) for v1, v2 in product(self.d1.names, self.d2.names)]
+        return ['(%s: %s)x(%s: %s)'%(self.d1.name, v1, self.d2.name, v2) for v1, v2 in product(self.d1.names, self.d2.names)]
 
 class Formula(Design):
 
-    def __init__(self, meta, form, *args, **kwargs):
-        super(Formula, self).__init__(meta, *args, **kwargs)
+    def __init__(self, meta, form, name='formula', *args, **kwargs):
+        super(Formula, self).__init__(meta, name, *args, **kwargs)
         self.form = form
         self.d = patsy.dmatrix(self.form, self.meta)
 
@@ -96,3 +122,11 @@ class Formula(Design):
 
     def _names(self):
         return self.d.design_info.column_names
+
+    def _priors(self):
+        priors = -1 * np.ones(self.k)
+
+        for t in self.d.design_info.term_names:
+            priors[self.d.design_info.term_name_slices[t]] = max(priors) + 1
+
+        return priors
