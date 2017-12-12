@@ -1,4 +1,5 @@
 
+*phenom*: A hierarchical non-parametric microbial phenotype model
 
 ## design example
 
