@@ -1,5 +1,7 @@
 import numpy as np
 import pystan
+import os
+import pickle
 
 class Phenotype(object):
 
@@ -79,6 +81,18 @@ class Phenotype(object):
         y = (y - y.mean()) / y.std()
 
         return x, y, xnorm, ynorm
+
+    def save(self, d):
+        os.makedirs(os.path.join(d, 'samples'))
+
+        self.data.to_csv(os.path.join(d, 'data.csv'))
+        self.meta.to_csv(os.path.join(d, 'meta.csv'))
+
+        pickle.dump(self, open(os.path.join(d, 'phenotype.pkl'), 'wb'))
+
+        for i, p in enumerate(self.posteriors):
+            pickle.dump(p, open(os.path.join(d, 'samples', 'posterior_%d.pkl'%i), 'wb'))
+
 
     def samples(self, *args, **kwargs):
         cfg = self.config()
