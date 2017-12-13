@@ -3,22 +3,23 @@ import pystan
 import os
 import pickle
 
+
 class Phenotype(object):
 
     def __init__(self, data, design, model='phenom.stan',
-                    alpha_priors=None, lengthscale_priors=None, sigma_prior=None,
-                    maxExpectedCross=100, minExpectedCross=.01):
+                 alpha_priors=None, lengthscale_priors=None, sigma_prior=[1, 1],
+                 maxExpectedCross=100, minExpectedCross=.01):
 
         self.data = data
         self.design = design
 
         self.alpha_priors = alpha_priors
         if self.alpha_priors is None:
-            self.alpha_priors = [[1,1]] * self.design.L
+            self.alpha_priors = [[1, 1]] * self.design.L
 
         self.lengthscale_priors = lengthscale_priors
         if self.lengthscale_priors is None:
-            self.lengthscale_priors = [[1,1]] * self.design.L
+            self.lengthscale_priors = [[1, 1]] * self.design.L
 
         self.sigma_prior = sigma_prior
 
@@ -32,7 +33,8 @@ class Phenotype(object):
     @property
     def model(self):
         if self._model is None:
-            self._model = pystan.StanModel(file='phenom/stan/'+self._modelFile)
+            self._model = pystan.StanModel(
+                file='phenom/stan/' + self._modelFile)
         return self._model
 
     def config(self):
@@ -61,7 +63,8 @@ class Phenotype(object):
         #     cfg['marginal_alpha_prior'] = [
         #         self.marginalEffect_variance_alpha, self.marginalEffect_variance_beta]
         #     cfg['marginal_lengthscale_prior'] = [
-        #         self.marginalEffect_lengthscale_alpha, self.marginalEffect_lengthscale_beta]
+        # self.marginalEffect_lengthscale_alpha,
+        # self.marginalEffect_lengthscale_beta]
 
         # expected number of origin crossings = 1/(pi * lengthscale)
         cfg['ls_min'] = 1. / np.pi / self.maxExpectedCross
@@ -86,13 +89,13 @@ class Phenotype(object):
         os.makedirs(os.path.join(d, 'samples'))
 
         self.data.to_csv(os.path.join(d, 'data.csv'))
-        self.meta.to_csv(os.path.join(d, 'meta.csv'))
+        self.design.meta.to_csv(os.path.join(d, 'meta.csv'))
 
         pickle.dump(self, open(os.path.join(d, 'phenotype.pkl'), 'wb'))
 
         for i, p in enumerate(self.posteriors):
-            pickle.dump(p, open(os.path.join(d, 'samples', 'posterior_%d.pkl'%i), 'wb'))
-
+            pickle.dump(
+                p, open(os.path.join(d, 'samples', 'posterior_%d.pkl' % i), 'wb'))
 
     def samples(self, *args, **kwargs):
         cfg = self.config()
