@@ -13,6 +13,7 @@ For example, to create a design for data with the following metadata:
 | mutant  | standard |
 | parent  | stress |
 | mutant  | stress |
+
 A design can be constructed as:
 
 ```python
