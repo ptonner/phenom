@@ -6,6 +6,7 @@
 *phenom* models require a design specifying the relationship between metadata and the latent functions to be estimated. Currently, design construction is supported through the use of [patsy](https://patsy.readthedocs.io) formulas to convert metadata into a design matrix.
 
 For example, to create a design for data with the following metadata:
+
 | strain  | condition |
 | ------------- | ------------- |
 | parent  | standard  |
@@ -22,6 +23,7 @@ treatment = Formula(meta, 'C(strain) + C(condition) + C(strain):C(condition)')
 `C(strain)` and `C(condition)` specify categorical variables, and `C(strain):C(condition)` specifies an interaction between strain and condition effects. For more details on equation formatting see [the patsy docs](https://patsy.readthedocs.io/en/latest/formulas.html#the-formula-language).
 
 The output of this design (`treatment.frame`) is:
+
 | mean  | strain=mutant  | condition=stress |
 | ------------- | ------------- | ------------- |
 1 | 0  | 0  |
@@ -38,6 +40,7 @@ The output of this design (`treatment.frame`) is:
 ## modeling batch effects
 
 To model batch effects, consider metadata of the form
+
 | strain  | condition | batch |
 | ------------- | ------------- | ------------- |
 | parent  | standard  | 1
