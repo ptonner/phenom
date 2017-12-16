@@ -83,6 +83,19 @@ generated quantities{
       # prepare cholesky for operations
       L_Sigma = cholesky_decompose(Sigma);
 
+      # compute dK: cov(df, f), and ddK: cov(df, df)
+      dK = cov_exp_quad(x, alpha[l], lengthscale[l]);
+      ddK = cov_exp_quad(x, alpha[l], lengthscale[l]);
+      for (i in 1:N){
+        for (j in 1:N){
+          diff = x[i] - x[j];
+
+          dK[i,j] = dK[i,j] * (-lsInv * diff);
+          ddK[i,j] = ddK[i,j] * (1.-lsInv*diff*diff) * lsInv;
+        }
+      }
+
+      # compute df/dt for functions in this prior
       for (k in 1:K)
         {
           if (prior[k] == l)
@@ -92,18 +105,6 @@ generated quantities{
               # solve for Sigma^{-1} f
               K_div_f = mdivide_left_tri_low(L_Sigma, fobs);
               K_div_f = mdivide_right_tri_low(K_div_f',L_Sigma)';
-
-              # compute dK: cov(df, f), and ddK: cov(df, df)
-              dK = cov_exp_quad(x, alpha[l], lengthscale[l]);
-              ddK = cov_exp_quad(x, alpha[l], lengthscale[l]);
-              for (i in 1:N){
-                for (j in 1:N){
-                  diff = x[i] - x[j];
-
-                  dK[i,j] = dK[i,j] * (-lsInv * diff);
-                  ddK[i,j] = ddK[i,j] * (1.-lsInv*diff*diff) * lsInv;
-                }
-              }
 
               df_pred_mu = (dK * K_div_f);
 
