@@ -63,6 +63,7 @@ treatment = Formula(meta, 'C(strain) + C(condition)')
 base = Formula(meta, '1')
 
 # batch effects
+# the '+0' in the formula is necessary to prevent patsy from creating an un-desired intercept column
 batch = Formula(meta, 'C(batch) + 0')
 
 # hierarchy is a combination of global phenotype and batch effects
