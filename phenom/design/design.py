@@ -17,16 +17,20 @@ class Design(object):
     each generated functional variable, and properties of the design space (e.g.
     number of variables and samples)."""
 
-    def __init__(self, meta, name='design', *args, **kwargs):
-        self.meta = meta
+    def __init__(self, name='design', *args, **kwargs):
         self.name = name
+        
+    def __call__(self, meta):
+        return self.process(meta)
 
-    @property
-    def matrix(self):
+    def process(self, meta):
+        raise NotImplemented()
+
+    def matrix(self, meta):
         """The design matrix."""
-        return self._matrix()
+        return self._matrix(meta)
 
-    def _matrix(self):
+    def _matrix(self, meta):
         raise NotImplemented('no matrix defined for this design!')
 
     @property
@@ -77,13 +81,24 @@ class Design(object):
 class Add(Design):
 
     def __init__(self, d1, d2, name='add', *args, **kwargs):
-        super(Add, self).__init__(d1.meta, name, *args, **kwargs)
+        super(Add, self).__init__(name, *args, **kwargs)
 
         self.d1 = d1
         self.d2 = d2
 
         if self.d2.name == self.d1.name:
             self.d2.name += '_2'
+
+    def process(self, meta):
+        dm1, priors1, ap1, lsp1 = self.d1.process(meta)
+        dm2, priors2, ap1, lsp2 = self.d2.process(meta)
+
+        dm = np.concatenate((dm1, dm2), 1)
+        priors = priors1 + priors2
+        alphaPriors = ap1 + ap2
+        lengthscalePriors = ls1 + ls2
+
+        return dm, priors, alphaPriors, lengthscalePriors
 
     def _k(self):
         return self.d1.k + self.d2.k
@@ -104,10 +119,37 @@ class Add(Design):
 
 class Kron(Design):
 
-    def __init__(self, d1, d2, name='kron', *args, **kwargs):
-        super(Kron, self).__init__(d1.meta, name, *args, **kwargs)
+    def __init__(self, d1, d2, name='kron', combineMethod = 'average', *args, **kwargs):
+        super(Kron, self).__init__(name, *args, **kwargs)
         self.d1 = d1
         self.d2 = d2
+        self.combineMethod = combineMethod
+
+    def process(self, meta):
+
+        dm1, priors1, ap1, lsp1 = self.d1.process(meta)
+        dm2, priors2, ap1, lsp2 = self.d2.process(meta)
+        
+        dm = []
+        n = dm1.shape[0]
+        for i in range(n):
+            dm.append(np.kron(dm1[i,:], m2[i,:]))
+        dm = np.array(dm)
+
+        priors = []
+        for v1, v2 in product(priors1, priors2):
+            priors.append(v1 + v2 * (max(priors1) + 1))
+
+        def combine(l1, l2, method):
+            ret = []
+            for e1, e2 in product(l1, l2):
+                if method == 'average':
+                    ret.append([(e1[0] + e2[0]) / 2, (e1[1] + e2[1]) / 2])
+
+        alphaPriors = combine(ap1, ap2, self.combineMethod)
+        lengthscalePriors = combine(lsp1, lsp2, self.combineMethod)
+        
+        return dm, priors, alphaPriors, lengthscalePriors
 
     def _matrix(self):
 
@@ -135,36 +177,3 @@ class Kron(Design):
 
         return ['(%s: %s)x(%s: %s)' % (self.d1.name, v1, self.d2.name, v2) for v1, v2 in product(self.d1.names, self.d2.names)]
 
-
-class Formula(Design):
-
-    def __init__(self, meta, form, name='formula', *args, **kwargs):
-        super(Formula, self).__init__(meta, name, *args, **kwargs)
-        self.form = form
-        self.d = patsy.dmatrix(self.form, self.meta)
-
-    def _matrix(self):
-        return np.array(self.d)
-
-    def _names(self):
-        # return self.d.design_info.column_names
-        cols = copy(self.d.design_info.column_names)
-
-        # convert all categorical factors to something pretty
-        pat = 'C\((?P<factor>[a-zA-Z0-9]+)(?P<ignore>, Treatment\([a-zA-Z0-9.]+\))?\)\[T?\.?(?P<level>[a-zA-Z0-9. ]+)\]'
-        comp = re.compile(pat)
-        found = map(comp.findall, cols)
-
-        for i in range(len(cols)):
-            if len(found[i]) > 0:
-                cols[i] = ', '.join(['%s=%s' % (f, l) for f, _, l in found[i]])
-
-        return cols
-
-    def _priors(self):
-        priors = -1 * np.ones(self.k)
-
-        for t in self.d.design_info.term_names:
-            priors[self.d.design_info.term_name_slices[t]] = max(priors) + 1
-
-        return priors
