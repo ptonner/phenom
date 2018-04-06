@@ -9,51 +9,68 @@ from itertools import product
 
 class Design(object):
 
+    """Abstract class defining the interface for various designs.
+
+    Designs take as input the metadata for a given dataset, and construct a
+    design matrix for use by phenom. The design also includes information about
+    how latex functional variables are grouped by different priors, names for
+    each generated functional variable, and properties of the design space (e.g.
+    number of variables and samples)."""
+
     def __init__(self, meta, name='design', *args, **kwargs):
         self.meta = meta
         self.name = name
 
     @property
+    def matrix(self):
+        """The design matrix."""
+        return self._matrix()
+
+    def _matrix(self):
+        raise NotImplemented('no matrix defined for this design!')
+
+    @property
+    def priors(self):
+        """The priors for each variable in the design."""
+        return np.array(self._priors()).astype(int)
+
+    def _priors(self):
+        raise NotImplemented('priors are not defined for this design!')
+
+    @property
     def k(self):
+        """The number of variables in design (e.g. columns in the design matrix)."""
         return self.matrix.shape[1]
 
     @property
     def n(self):
+        """The number of samples in the design."""
         return self.meta.shape[0]
 
     @property
     def L(self):
+        """The number of priors needed for the design."""
         return max(self.priors) + 1
 
     @property
     def names(self):
+        """The names for each variable in the design."""
         return self._names()
 
     def _names(self):
         raise NotImplemented()
 
     @property
-    def matrix(self):
-        return self._matrix()
-
-    def _matrix(self):
-        raise NotImplemented()
-
-    @property
     def frame(self):
+        """A dataframe of the design matrix."""
         return pd.DataFrame(self.matrix, columns=self.names)
 
-    @property
-    def priors(self):
-        return np.array(self._priors()).astype(int)
-
-    def _priors(self):
-        raise NotImplemented()
-
     def __mul__(self, other):
+        """multiple two designs"""
         return Kron(self, other)
 
     def __add__(self, other):
+        """add two designs"""
         return Add(self, other)
 
 
