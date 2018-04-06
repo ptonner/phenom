@@ -7,20 +7,16 @@ import pandas as pd
 
 class Phenotype(object):
 
-    def __init__(self, data, design, model='phenom.stan',
-                 alpha_priors=None, lengthscale_priors=None, sigma_prior=[1, 1],
-                 maxExpectedCross=100, minExpectedCross=.01):
+    def __init__(self, dataset, design, model='phenom.stan',
+                 sigma_prior=[1, 1], maxExpectedCross=100, minExpectedCross=.01):
 
-        self.data = data
+        self.dataset = dataset
         self.design = design
 
-        self.alpha_priors = alpha_priors
-        if self.alpha_priors is None:
-            self.alpha_priors = [[1, 1]] * self.design.L
-
-        self.lengthscale_priors = lengthscale_priors
-        if self.lengthscale_priors is None:
-            self.lengthscale_priors = [[1, 1]] * self.design.L
+        self.x, self.y = self.dataset.standardize()
+        self.dm, self.priors, self.alphaPriors, self.lengthscalePriors = self.design(self.dataset.meta)
+        self.priors = self.priors + 1
+        self.L = max(priors)
 
         self.sigma_prior = sigma_prior
 
@@ -40,32 +36,19 @@ class Phenotype(object):
 
     def config(self):
 
-        x, y, _, _ = self.normalize()
-        dm = self.design.matrix
-        priors = self.design.priors + 1
-        k = self.design.k
-        L = max(priors)
-
         cfg = {
-            'N': x.shape[0],
-            'P': y.shape[1],
-            'K': dm.shape[1],
-            'L': L,
-            'prior': priors,
-            'design': dm,
-            'x': x,
-            'y': y.T,
-            'alpha_prior': self.alpha_priors,
-            'lengthscale_prior': self.lengthscale_priors,
+            'N': self.x.shape[0],
+            'P': self.y.shape[1],
+            'K': self.dm.shape[1],
+            'L': self.L,
+            'prior': self.priors,
+            'design': self.dm,
+            'x': self.x,
+            'y': self.y.T,
+            'alpha_prior': self.alphaPriors,
+            'lengthscale_prior': self.lengthscalePriors,
             'sigma_prior': self.sigma_prior,
         }
-
-        # if self.model in ['mrep', 'mfull']:
-        #     cfg['marginal_alpha_prior'] = [
-        #         self.marginalEffect_variance_alpha, self.marginalEffect_variance_beta]
-        #     cfg['marginal_lengthscale_prior'] = [
-        # self.marginalEffect_lengthscale_alpha,
-        # self.marginalEffect_lengthscale_beta]
 
         # expected number of origin crossings = 1/(pi * lengthscale)
         cfg['ls_min'] = 1. / np.pi / self.maxExpectedCross

@@ -77,6 +77,14 @@ class DataSet(object):
 
         self.data = np.log2(self.data)
 
+    def standardize(self):
+        x = self.data.index.copy()
+        x = (x-x.min()) / (x.max() - x.min())
+
+        y = self.data.values.copy()
+
+        return x, y
+
     def melt(self):
 	"""melt this dataset into 'tidy' format, where each time-point of an individual replicate is a seperate row."""
         pivot = pd.concat((self.meta, self.data.T),1,ignore_index=False)
