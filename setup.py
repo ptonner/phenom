@@ -46,6 +46,7 @@ setup(
     keywords='statistics microbiology',
 
     packages=find_packages(exclude=['data', 'tests']),
+    include_package_data=True,
 
     install_requires=['pandas', 'matplotlib', 'numpy', 'pystan', 'patsy'],
 

@@ -33,9 +33,12 @@ class Phenotype(object):
 
     @property
     def model(self):
+        d, _ = os.path.split(__file__)
+        
         if self._model is None:
             self._model = pystan.StanModel(
-                file='phenom/stan/' + self._modelFile)
+                file = os.path.join(d, 'stan', self._modelFile)
+            )
         return self._model
 
     def config(self):
