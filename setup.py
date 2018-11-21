@@ -48,7 +48,7 @@ setup(
     packages=find_packages(exclude=['data', 'tests']),
     include_package_data=True,
 
-    install_requires=['pandas', 'matplotlib', 'numpy', 'pystan', 'patsy'],
+    install_requires=['pandas', 'matplotlib', 'numpy', 'pystan', 'patsy', 'scipy'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
