@@ -1,2 +1,2 @@
-import function
-import hyperparam
+from . import function
+from . import hyperparam
