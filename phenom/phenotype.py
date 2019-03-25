@@ -8,8 +8,8 @@ import pandas as pd
 class Phenotype(object):
 
     def __init__(self, data, design, model='phenom.stan',
-                 alpha_priors=None, lengthscale_priors=None, sigma_prior=[1, 1],
-                 maxExpectedCross=100, minExpectedCross=.01):
+                 alpha_priors=None, lengthscale_priors=None, sigma_prior=[1, 1], marginal_alpha_prior=[1, 1], marginal_lengthscale_prior = [1, 1],
+                 maxExpectedCross=100, minExpectedCross=.01, reduce=False):
 
         self.data = data
         self.design = design
@@ -24,8 +24,13 @@ class Phenotype(object):
 
         self.sigma_prior = sigma_prior
 
+        self.marginal_alpha_prior = marginal_alpha_prior 
+        self.marginal_lengthscale_prior = marginal_lengthscale_prior 
+
         self.maxExpectedCross = maxExpectedCross
         self.minExpectedCross = minExpectedCross
+
+        self.reduce = reduce
 
         self.posteriors = []
         self._model = None
@@ -45,6 +50,9 @@ class Phenotype(object):
 
         x, y, _, _ = self.normalize()
         dm = self.design.matrix
+        if self.reduce:
+            dm = np.unique(self.design.matrix, axis=0)
+            
         priors = self.design.priors + 1
         k = self.design.k
         L = max(priors)
@@ -61,6 +69,8 @@ class Phenotype(object):
             'alpha_prior': self.alpha_priors,
             'lengthscale_prior': self.lengthscale_priors,
             'sigma_prior': self.sigma_prior,
+            'marginal_alpha_prior': self.marginal_alpha_prior,
+            'marginal_lengthscale_prior': self.marginal_lengthscale_prior
         }
 
         # if self.model in ['mrep', 'mfull']:
@@ -84,6 +94,17 @@ class Phenotype(object):
         x = (x - x.min()) / (x.max() - x.min())
 
         y = self.data.values
+
+        if self.reduce:
+            uniq, ind = np.unique(self.design.matrix, axis=0, return_inverse=True)
+
+            tmp = np.zeros((x.shape[0], uniq.shape[0]))
+
+            for i in range(uniq.shape[0]):
+                sel, = np.where(ind == i)
+                tmp[:, i] = y[:, sel].mean(axis=1)
+            y = tmp
+            
         ynorm = (y.mean(), y.std())
         y = (y - y.mean()) / y.std()
 
