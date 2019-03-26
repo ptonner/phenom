@@ -34,7 +34,7 @@ class Approx():
         cfg = self.phenotype.config()
 
         m = GPy.models.GPKroneckerGaussianRegression(
-            cfg['x'][:, None], cfg['design'], cfg['y'], kx, kdesign
+            cfg['x'][:, None], cfg['design'], cfg['y'][:, None], kx, kdesign
         )
 
         if optimize:
