@@ -19,9 +19,11 @@ class Approx():
             ind, = np.where(self.phenotype.design.priors == i)
 
             if kdesign is None:
-                kdesign = GPy.kern.Linear(ind.shape[0], active_dims=ind, ARD=False)
+                kdesign = GPy.kern.Linear(
+                    ind.shape[0], active_dims=ind, ARD=False)
             else:
-                ktmp = GPy.kern.Linear(ind.shape[0], active_dims=ind, ARD=False)
+                ktmp = GPy.kern.Linear(
+                    ind.shape[0], active_dims=ind, ARD=False)
                 kdesign = kdesign + ktmp
 
         return kx, kdesign
@@ -32,7 +34,7 @@ class Approx():
         cfg = self.phenotype.config()
 
         m = GPy.models.GPKroneckerGaussianRegression(
-            cfg['x'], cfg['design'], cfg['y'], kx, kdesign
+            cfg['x'][:, None], cfg['design'], cfg['y'], kx, kdesign
         )
 
         if optimize:
@@ -57,8 +59,7 @@ class Approx():
 
             mu, var = m.predict(m.X1, predx2)
 
-            mus.append(mu[:,0])
-            vars.append(var[:,0])
+            mus.append(mu[:, 0])
+            vars.append(var[:, 0])
 
         return np.column_stack(mus), np.column_stack(var)
-
