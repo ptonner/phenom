@@ -1,7 +1,40 @@
 
 *phenom*: A hierarchical non-parametric microbial phenotype model
 
-# building designs
+# requirements
+
+## os requirements
+This software has been run on *macOS* and *linux*, specifically:
+* ubuntu 16.04
+* osX 10.14.1
+  * note, special steps may be needed to install *pystan* on osX
+    operating systems. [See the pystan wiki for more details.](https://github.com/stan-dev/pystan/wiki/PyStan-and-OS-X)
+	
+## Python
+
+* python (2.7 or 3.6)
+* major dependencies:
+  * pystan
+  * numpy
+  * patsy
+  * matplotlib
+  * GPy (for running examples)
+
+# installation
+
+Download the phenom repository. It is recommended to use a python
+virtual environment for installation. Run the install (this should
+take under five minutes):
+
+	python setup.py install
+	
+# usage
+
+## example
+
+An example notebook is provided in the `notebooks` folder. 
+
+## building designs
 
 *phenom* models require a design specifying the relationship between metadata and the latent functions to be estimated. Currently, design construction is supported through the use of [patsy](https://patsy.readthedocs.io) formulas to convert metadata into a design matrix.
 
@@ -72,3 +105,7 @@ hierarchy = base + batch
 # the full design replicates treatment design across hierarchy
 design = treatment * hierarchy
 ```
+
+# License
+
+This project is covered under the **Apache 2.0 License**
