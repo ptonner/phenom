@@ -58,12 +58,16 @@ def parseFile(f, strain=None, header=0):
 
     data.columns = ["time"] + np.arange(data.shape[1] - 1).tolist()
     meta.index = range(meta.shape[0])
+    data = data.set_index("time")
 
     return data, meta
 
 
 if __name__ == "__main__":
 
+    from collections import defaultdict
+
+    datasets = defaultdict(list)
     for target, strain, acid, header in [
         ("PA1054 Sodium Benzoate", "PA1054", "sodium-benzoate", 0),
         ("PA1054 Citric Acid", "PA1054", "citric", 0),
@@ -93,13 +97,36 @@ if __name__ == "__main__":
         meta["acid"] = acid
         meta["genus"] = "pseudomonas"
         meta["strain"] = strain
+        meta["plate"] = target
         meta.index = range(meta.shape[0])
 
         d = "%s-%s" % (strain, acid)
-        print(d)
 
-        path = os.path.join("../../lund", d)
+        datasets[d].append((data, meta))
+
+    for d, sets in datasets.items():
+        path = os.path.join("../../pseudomonas", d)
         os.makedirs(path, exist_ok=True)
 
-        data.to_csv(os.path.join(path, "data.csv"))
-        meta.to_csv(os.path.join(path, "key.csv"))
+        data = meta = None
+        for dd, m in sets:
+            if data is None:
+                data = dd
+                meta = m
+            else:
+                data = pd.concat((data, dd), axis=1)
+                meta = pd.concat((meta, m))
+
+        data = data.set_axis(np.arange(data.shape[1]), axis=1)
+
+        # remove missing data
+        sel = ~data.isnull().all(0)
+        data = data.loc[:, sel]
+        meta = meta.loc[sel.values, :]
+
+        assert meta.shape[0] == data.shape[1]
+
+        print(d, data.shape, meta.shape, data.isnull().all(0).sum())
+
+        data.to_csv(os.path.join(path, "data.csv"),)
+        meta.to_csv(os.path.join(path, "meta.csv"), index=False)
