@@ -6,10 +6,20 @@ import pandas as pd
 
 
 class Phenotype(object):
-
-    def __init__(self, data, design, model='phenom.stan',
-                 alpha_priors=None, lengthscale_priors=None, sigma_prior=[1, 1], marginal_alpha_prior=[1, 1], marginal_lengthscale_prior = [1, 1],
-                 maxExpectedCross=100, minExpectedCross=.01, reduce=False):
+    def __init__(
+        self,
+        data,
+        design,
+        model="phenom.stan",
+        alpha_priors=None,
+        lengthscale_priors=None,
+        sigma_prior=[1, 1],
+        marginal_alpha_prior=[1, 1],
+        marginal_lengthscale_prior=[1, 1],
+        maxExpectedCross=100,
+        minExpectedCross=0.01,
+        reduce=False,
+    ):
 
         self.data = data
         self.design = design
@@ -24,8 +34,8 @@ class Phenotype(object):
 
         self.sigma_prior = sigma_prior
 
-        self.marginal_alpha_prior = marginal_alpha_prior 
-        self.marginal_lengthscale_prior = marginal_lengthscale_prior 
+        self.marginal_alpha_prior = marginal_alpha_prior
+        self.marginal_lengthscale_prior = marginal_lengthscale_prior
 
         self.maxExpectedCross = maxExpectedCross
         self.minExpectedCross = minExpectedCross
@@ -39,10 +49,10 @@ class Phenotype(object):
     @property
     def model(self):
         d, _ = os.path.split(__file__)
-        
+
         if self._model is None:
             self._model = pystan.StanModel(
-                file = os.path.join(d, 'stan', self._modelFile)
+                file=os.path.join(d, "stan", self._modelFile)
             )
         return self._model
 
@@ -52,25 +62,25 @@ class Phenotype(object):
         dm = self.design.matrix
         if self.reduce:
             dm = np.unique(self.design.matrix, axis=0)
-            
+
         priors = self.design.priors + 1
         k = self.design.k
         L = max(priors)
 
         cfg = {
-            'N': x.shape[0],
-            'P': y.shape[1],
-            'K': dm.shape[1],
-            'L': L,
-            'prior': priors,
-            'design': dm,
-            'x': x,
-            'y': y.T,
-            'alpha_prior': self.alpha_priors,
-            'lengthscale_prior': self.lengthscale_priors,
-            'sigma_prior': self.sigma_prior,
-            'marginal_alpha_prior': self.marginal_alpha_prior,
-            'marginal_lengthscale_prior': self.marginal_lengthscale_prior
+            "N": x.shape[0],
+            "P": y.shape[1],
+            "K": dm.shape[1],
+            "L": L,
+            "prior": priors,
+            "design": dm,
+            "x": x,
+            "y": y.T,
+            "alpha_prior": self.alpha_priors,
+            "lengthscale_prior": self.lengthscale_priors,
+            "sigma_prior": self.sigma_prior,
+            "marginal_alpha_prior": self.marginal_alpha_prior,
+            "marginal_lengthscale_prior": self.marginal_lengthscale_prior,
         }
 
         # if self.model in ['mrep', 'mfull']:
@@ -81,8 +91,8 @@ class Phenotype(object):
         # self.marginalEffect_lengthscale_beta]
 
         # expected number of origin crossings = 1/(pi * lengthscale)
-        cfg['ls_min'] = 1. / np.pi / self.maxExpectedCross
-        cfg['ls_max'] = 1. / np.pi / self.minExpectedCross
+        cfg["ls_min"] = 1.0 / np.pi / self.maxExpectedCross
+        cfg["ls_max"] = 1.0 / np.pi / self.minExpectedCross
 
         return cfg
 
@@ -101,25 +111,25 @@ class Phenotype(object):
             tmp = np.zeros((x.shape[0], uniq.shape[0]))
 
             for i in range(uniq.shape[0]):
-                sel, = np.where(ind == i)
+                (sel,) = np.where(ind == i)
                 tmp[:, i] = y[:, sel].mean(axis=1)
             y = tmp
-            
+
         ynorm = (y.mean(), y.std())
         y = (y - y.mean()) / y.std()
 
         return x, y, xnorm, ynorm
 
     def save(self, d):
-        if not os.path.exists(os.path.join(d, 'samples')):
-            os.makedirs(os.path.join(d, 'samples'))
+        if not os.path.exists(os.path.join(d, "samples")):
+            os.makedirs(os.path.join(d, "samples"))
 
-        self.data.to_csv(os.path.join(d, 'data.csv'))
-        self.design.meta.to_csv(os.path.join(d, 'meta.csv'))
-        self.design.frame.to_csv(os.path.join(d, 'design.csv'))
+        self.data.to_csv(os.path.join(d, "data.csv"))
+        self.design.meta.to_csv(os.path.join(d, "meta.csv"))
+        self.design.frame.to_csv(os.path.join(d, "design.csv"))
 
         x, y, xnorm, ynorm = self.normalize()
-        pd.DataFrame(y, index=x).to_csv(os.path.join(d, 'data-normalized.csv'))
+        pd.DataFrame(y, index=x).to_csv(os.path.join(d, "data-normalized.csv"))
 
         # pickle.dump(self, open(os.path.join(d, 'phenotype.pkl'), 'wb'))
 
@@ -131,20 +141,23 @@ class Phenotype(object):
             ymean, ystd = ynorm
             xmin, xmax = xnorm
 
-            samp['f-native'] = samp['f'] * ystd
-            samp['f-native'][:, 0] += ymean
+            samp["f-native"] = samp["f"] * ystd
+            samp["f-native"][:, 0] += ymean
 
-            samp['df-native'] = samp['df'] * ystd / (xmax - xmin)
+            if "df" in samp:
+                samp["df-native"] = samp["df"] * ystd / (xmax - xmin)
 
             pickle.dump(
-                samp, open(os.path.join(d, 'samples', 'posterior_%d.pkl' % i), 'wb'))
+                samp, open(os.path.join(d, "samples", "posterior_%d.pkl" % i), "wb")
+            )
 
             summary = p.summary()
             summary = pd.DataFrame(
-                summary['summary'],
-                index=summary['summary_rownames'],
-                columns=summary['summary_colnames'])
-            summary.to_csv(os.path.join(d, 'samples', 'posterior_%d.csv' % i))
+                summary["summary"],
+                index=summary["summary_rownames"],
+                columns=summary["summary_colnames"],
+            )
+            summary.to_csv(os.path.join(d, "samples", "posterior_%d.csv" % i))
 
     def samples(self, *args, **kwargs):
         cfg = self.config()
