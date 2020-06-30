@@ -29,7 +29,7 @@ transformed parameters {
     matrix[N, N] cov;
     cov = cov_exp_quad(x, alpha[l], lengthscale[l]);
     for (n in 1:N)
-      cov[n, n] = cov[n, n] + 1e-12;
+      cov[n, n] += 1e-12;
     L_cov = cholesky_decompose(cov);
 
     for (k in 1:K)
@@ -78,31 +78,31 @@ generated quantities{
       // cov(f)
       Sigma = cov_exp_quad(x, alpha[l], lengthscale[l]);
       for (n in 1:N)
-        Sigma[n, n] = Sigma[n,n] + 1e-8;
+        Sigma[n, n] += 1e-8;
 
-      # prepare cholesky for operations
+      // prepare cholesky for operations
       L_Sigma = cholesky_decompose(Sigma);
 
-      # compute dK: cov(df, f), and ddK: cov(df, df)
+      // compute dK: cov(df, f), and ddK: cov(df, df)
       dK = cov_exp_quad(x, alpha[l], lengthscale[l]);
       ddK = cov_exp_quad(x, alpha[l], lengthscale[l]);
       for (i in 1:N){
         for (j in 1:N){
           diff = x[i] - x[j];
 
-          dK[i,j] = dK[i,j] * (-lsInv * diff);
-          ddK[i,j] = ddK[i,j] * (1.-lsInv*diff*diff) * lsInv;
+          dK[i,j] *= (-lsInv * diff);
+          ddK[i,j] *= (1.-lsInv*diff*diff) * lsInv;
         }
       }
 
-      # compute df/dt for functions in this prior
+      //compute df/dt for functions in this prior
       for (k in 1:K)
         {
           if (prior[k] == l)
             {
               fobs = f[k]';
 
-              # solve for Sigma^{-1} f
+              // solve for Sigma^{-1} f
               K_div_f = mdivide_left_tri_low(L_Sigma, fobs);
               K_div_f = mdivide_right_tri_low(K_div_f',L_Sigma)';
 
