@@ -49,7 +49,7 @@ def save(data, key, sel, path):
     key = key.loc[sel.values, :]
 
     data.to_csv(os.path.join(path, "data.csv"))
-    key.to_csv(os.path.join(path, "key.csv"))
+    key.to_csv(os.path.join(path, "meta.csv"))
 
 
 if __name__ == "__main__":
@@ -64,6 +64,7 @@ if __name__ == "__main__":
         data = parse(pd.read_csv(data, encoding="utf-16"))
 
         key = pd.read_excel(key)
+        key["plate"] = d
 
         # print(data.head())
         # print(key.head())
