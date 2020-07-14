@@ -60,9 +60,29 @@ if __name__ == "__main__":
     if args.model == "mnull":
         phen = phenom.phenotype.Phenotype(ds.data, mnull, model="phenom.stan")
     elif args.model == "mbatch":
-        phen = phenom.phenotype.Phenotype(ds.data, mbatch, model="phenom_deriv.stan")
+        phen = phenom.phenotype.Phenotype(
+            ds.data,
+            mbatch,
+            model="phenom_deriv.stan",
+            lengthscale_priors=[[6, 1], [6, 1], [6, 1], [6, 1]],
+            alpha_priors=[[10.0, 10.0], [10.0, 10.0], [7.0, 10.0], [7.0, 10.0]],
+            minExpectedCross=0.1,
+            maxExpectedCross=3,
+            sigma_prior=[0.02, 20],
+        )
     else:
-        phen = phenom.phenotype.Phenotype(ds.data, mbatch, model="phenom_marginal.stan")
+        phen = phenom.phenotype.Phenotype(
+            ds.data,
+            mbatch,
+            model="phenom_marginal.stan",
+            lengthscale_priors=[[6, 1], [6, 1], [6, 1], [6, 1]],
+            alpha_priors=[[10.0, 10.0], [10.0, 10.0], [7.0, 10.0], [7.0, 10.0]],
+            marginal_lengthscale_prior=[6, 1],
+            marginal_alpha_prior=[2, 100],
+            minExpectedCross=0.1,
+            maxExpectedCross=3,
+            sigma_prior=[0.02, 20],
+        )
 
     # sampling
     samples = phen.samples(
