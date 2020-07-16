@@ -6,7 +6,7 @@ import patsy
 import numpy as np
 
 
-def load_data(condition, DATA_DIR="../data"):
+def load_data(condition, dataset, DATA_DIR="../data"):
 
     if condition == "standard":
         DATA_DIR = os.path.join(DATA_DIR, "standard")
@@ -14,19 +14,22 @@ def load_data(condition, DATA_DIR="../data"):
         DATA_DIR = os.path.join(DATA_DIR, "{}-oxidative".format(condition))
 
     # load data
-    ds = None
+    if dataset is None:
+        ds = None
 
-    for dr in os.listdir(DATA_DIR):
+        for dr in os.listdir(DATA_DIR):
 
-        if not os.path.isdir(os.path.join(DATA_DIR, dr)):
-            continue
+            if not os.path.isdir(os.path.join(DATA_DIR, dr)):
+                continue
 
-        if ds is None:
-            ds = phenom.dataset.DataSet.fromDirectory(os.path.join(DATA_DIR, dr))
-        else:
-            ds = ds.concat(
-                phenom.dataset.DataSet.fromDirectory(os.path.join(DATA_DIR, dr))
-            )
+            if ds is None:
+                ds = phenom.dataset.DataSet.fromDirectory(os.path.join(DATA_DIR, dr))
+            else:
+                ds = ds.concat(
+                    phenom.dataset.DataSet.fromDirectory(os.path.join(DATA_DIR, dr))
+                )
+    else:
+        ds = phenom.dataset.DataSet.fromDirectory(os.path.join(DATA_DIR, dataset))
 
     ds.filter()
     ds.meta["mMPQ"] = ds.meta["mM PQ"]
@@ -43,10 +46,11 @@ if __name__ == "__main__":
     parser.add_argument("model", choices=["mnull", "mbatch", "mfull"])
     parser.add_argument("--adapt_delta", type=float, default=0.8)
     parser.add_argument("--max_treedepth", type=int, default=10)
+    parser.add_argument("--dataset", default=None)
 
     args = parser.parse_args()
 
-    ds = load_data(args.condition)
+    ds = load_data(args.condition, args.dataset)
 
     # designs
     mnull = phenom.design.Formula(ds.meta, "C(mMPQ, Sum)")
@@ -88,4 +92,9 @@ if __name__ == "__main__":
     samples = phen.samples(
         control=dict(adapt_delta=args.adapt_delta, max_treedepth=args.max_treedepth)
     )
-    phen.save("hsalinarum/{}/{}".format(args.condition, args.model))
+
+    # save
+    if args.dataset == -1:
+        phen.save("hsalinarum/combined/{}/{}".format(args.condition, args.model))
+    else:
+        phen.save("hsalinarum/individual/{}/{}".format(args.condition, args.dataset))

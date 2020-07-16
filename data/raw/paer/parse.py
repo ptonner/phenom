@@ -105,9 +105,6 @@ if __name__ == "__main__":
         datasets[d].append((data, meta))
 
     for d, sets in datasets.items():
-        path = os.path.join("../../pseudomonas", d)
-        os.makedirs(path, exist_ok=True)
-
         data = meta = None
         for dd, m in sets:
             if data is None:
@@ -127,6 +124,12 @@ if __name__ == "__main__":
         assert meta.shape[0] == data.shape[1]
 
         print(d, data.shape, meta.shape, data.isnull().all(0).sum())
+
+        # remove spaces from filename
+        d = d.replace(" ", "_")
+
+        path = os.path.join("../../pseudomonas", d)
+        os.makedirs(path, exist_ok=True)
 
         data.to_csv(os.path.join(path, "data.csv"),)
         meta.to_csv(os.path.join(path, "meta.csv"), index=False)

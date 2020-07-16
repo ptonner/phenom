@@ -63,6 +63,9 @@ if __name__ == "__main__":
 
         data = parse(pd.read_csv(data, encoding="utf-16"))
 
+        # remove spaces in filename
+        d = d.replace(" ", "_")
+
         key = pd.read_excel(key)
         key["plate"] = d
 
