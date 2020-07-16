@@ -26,7 +26,7 @@ sampling/hsalinarum/combined/%/posterior_0.pkl:
 sampling/hsalinarum/individual/%/posterior_0.pkl:
 	cd sampling;\
 	mkdir -p hsalinarum/individual/$*/;\
-	python hsalinarum.py $(word 4, $(subst /, ,$(@D))) mnull\
+	python hsalinarum.py $(word 4, $(subst /, ,$(@D))) mnull \
 	--dataset $(word 5, $(subst /, ,$(@D))) \
 	--adapt_delta=0.95 --max_treedepth=20 \
 	> hsalinarum/individual/$*/log.out \
@@ -35,7 +35,6 @@ sampling/hsalinarum/individual/%/posterior_0.pkl:
 # H. salinarum
 conditions := low hi
 hbatches := $(foreach batch,$(wildcard data/hi-oxidative/*),$(lastword $(subst /, ,$(batch))))
-# hbatches := $(lastword $(subst /, ,$(wildcard data/hi-oxidative/*)))
 
 hsalCombined: $(foreach cond,$(conditions),$(foreach model,$(models),sampling/hsalinarum/combined/$(cond)/$(model)/samples/posterior_0.pkl))
 hsalIndiv: $(foreach cond,$(conditions),$(foreach batch,$(hbatches),sampling/hsalinarum/individual/$(cond)/$(batch)/samples/posterior_0.pkl))
