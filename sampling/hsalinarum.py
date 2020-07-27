@@ -34,7 +34,8 @@ def load_data(condition, dataset, DATA_DIR="../data"):
     ds.filter()
     ds.meta["mMPQ"] = ds.meta["mM PQ"]
     ds.data = np.log2(ds.data)
-    ds.data = ds.data.iloc[5::3, :]
+    # ds.data = ds.data.iloc[5::3, :]
+    ds.data = ds.data.loc[np.arange(2.5, 48, 1.5), :]
     return ds
 
 
@@ -94,7 +95,7 @@ if __name__ == "__main__":
     )
 
     # save
-    if args.dataset == -1:
+    if args.dataset is None:
         phen.save("hsalinarum/combined/{}/{}".format(args.condition, args.model))
     else:
         phen.save("hsalinarum/individual/{}/{}".format(args.condition, args.dataset))
