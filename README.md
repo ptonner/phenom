@@ -32,7 +32,7 @@ take under five minutes):
 
 ## Example
 
-An example notebook is provided in the `notebooks` folder. 
+A complete example of `phenom` usage is provided in the `notebooks` folder as `example.ipynb`. Details of the library are outlined below.
 
 ## Phenotype
 
