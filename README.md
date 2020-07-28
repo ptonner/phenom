@@ -74,6 +74,13 @@ assumed filenames):
 ds = DataSet.fromDirectory("path/to/folder")
 ```
 
+You can see examples of the data.csv and meta.csv files by running the
+processing step for raw growth data:
+```bash
+make data
+```
+and viewing the generated files in the `data` directory.
+
 ## Building designs
 
 *phenom* models require a design specifying the relationship between
